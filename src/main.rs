@@ -1,160 +1,135 @@
-use serde_json::{Number, Value};
+use json::object::Object;
+use serde_json::{Map, Value};
+use std::fs;
+use std::io::{stdin, stdout, Write};
+use std::collections::VecDeque;
 use serde_derive::{Serialize, Deserialize};
-
-/* 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+use serde_json::Result;
+use serde_json::json;
 struct Directory {
-    name: String,
-    records: Vec<User>,
+    records: Vec<Object>,
 }
+
 impl Directory {
-    fn new(name: String) -> Self {
-        std::fs::create_dir(name.clone());
-        Self {
-            name,
-            records: Vec::new(),
-        }
-    }
-}*/
-#[derive(Serialize, Deserialize, Debug)]
-struct UserDirectory {
-    records: Vec<User>,
-    none: User,
-}
-impl UserDirectory {
     fn new() -> Self {
-        std::fs::create_dir("users_directory");
+        std::fs::create_dir("directory");
         Self {
             records: Vec::new(),
-            none: User::none(),
         }
     }
-
-    fn name_search(&mut self, mut name: &str) -> &User {
-        let name = name.to_string();
-        let mut results: Vec<&User> = Vec::new();
-        let mut index = 0;
-        for (pos, e) in self.records.iter().enumerate() {
-            if self.records[pos].name.clone() == name.clone() {
-                results.push(&self.records[pos]);
-                index = pos;
-            }
-        }
-        if results.len() == 0 {
-            println!("No existing record");
-            return &self.none;
-        }
-        else if results.len() == 1 {
-            println!("Record found.");
-            print_deserialized(Some(results[index]), None);
-        }
-        else {
-            print_deserialized(None, Some(results));
+    fn new_json_obj(&mut self, key_vals: Vec<(String, String)>) -> Value {
+        let mut map = Map::new();
+        for (key, val) in key_vals.into_iter() {
+         //   println!("{}: {}", key, val);
+            map.insert(key, Value::String(val));
         }
 
-        return &self.none;
-    }
-
-    fn address_search(&self, mut address: &str) -> &User {
-        let address = address.to_string();
-        let mut results: Vec<&User> = Vec::new();
-        let mut index = 0;
-        for (pos,e) in self.records.iter().enumerate() {
-            if self.records[pos].address == address {
-                results.push(&self.records[pos]);
-                //print_deserialized(&self.records[pos]);
-                index = pos;
-            }
-        }
-        if results.len() == 0  {
-            println!("No existing record");
-            return &self.none;
-        }
-        else if results.len() == 1 {
-            println!("Record found.");
-            println!("{:?}", self.records[index]);
-            return &self.records[index];
-        }
-        print_deserialized(None, Some(results));
-        return &self.none;
-        
-    }
-    fn record(&mut self, name: &str, address: String, age: i32) {
-        let mut record_naming = "user_".to_owned() + name;
-        let mut record: User = User::new(name.to_string(), address, age);
-        let mut record_copy = User::new(record.name.clone(), record.address.clone(), age);
-        self.records.push(record);
+        let obj = Value::Object(map);
         std::fs::write(
-            "users_directory/".to_owned() + &record_naming + &".json".to_owned(),
-            serde_json::to_string_pretty(&record_copy).unwrap(),
+            "directory/record.json",
+            serde_json::to_string_pretty(&obj).unwrap(),
         ).unwrap();
-        let serialized = serde_json::to_string(&record_copy).unwrap();
-        //println!("{:?}", serde_json::from_str::<User>(&serialized).unwrap());
-        println!("Record added!");
+        return obj;
     }
-}
-#[derive(Serialize, Deserialize, Debug)]
-pub struct User {
-    pub name: String,
-    pub address: String,
-    pub age: i32,
-}
 
-impl User {
-    fn new(name: String, address: String, age: i32) -> Self {
+    fn new_records(&mut self, num_fields: u32) -> Record {
+       // let mut key_vals: Vec<(String, String)> = Vec::new();
+        let mut key_vals: Vec<(String, String)> = Vec::new();
+        let mut field: String = String::new();
+        let mut value: String = String::new();
+        let mut expected = Record::default();
+        let mut i = 0;
+
+        while i < num_fields {
+            
+            println!("Enter a field:");
+
+            let _ = stdout().flush();
+
+            stdin().read_line(&mut field).expect("ERR");
+
+            if let Some('\n')=field.chars().next_back(){field.pop();}
+            if let Some('\r')=field.chars().next_back() {field.pop();}
+            
+            let mut value = String::new();
+            
+            println!("Enter the associated value");
+        
+            let _ = stdout().flush();
+            
+            stdin().read_line(&mut value).expect("ERR");
+            
+            key_vals.push((field.clone(), value.clone()));
+          //  assert_eq!((field, value), *key_vals.back().unwrap());
+            expected.key_vals.push((Wrapper(field.clone()), Wrapper(value.into())));
+            field = String::new();
+            value = String::new();
+            i+=1;
+        }
+      //  println!("{:?}", key_vals);
+        
+        let mut obj = self.new_json_obj(key_vals);
+        let mut string_obj = obj.to_string();
+
+        let res: Record = serde_json::from_str(&string_obj).unwrap();
+        return res;
+    }
+}   
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(transparent)]
+struct Wrapper<T>(T);
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Record{
+    #[serde(with = "serde_with::rust::tuple_list_as_map")]
+    key_vals: Vec<Label>,
+}
+impl Record {
+    fn default() -> Self {
         Self {
-            name,
-            address,
-            age
-        }
-    }
-    fn none() -> Self {
-        Self {
-            name: String::from("Record not found"),
-            address: String::from("Record not found"),
-            age: -1,
+            key_vals: Vec::new(),
         }
     }
 }
-pub fn print_deserialized(user: Option<&User>, users: Option<Vec<&User>>) {
-    if !user.is_none() && users.is_none() {
-        let serialized = serde_json::to_string(&user).unwrap();
-        println!("{:?}", serde_json::from_str::<User>(&serialized).unwrap());
-    }
-    
-    else if user.is_none() && !users.is_none(){
-        println!("Multiple records");
-        let mut users = users.unwrap();
-        for i in 0..users.len() {
-            println!("{:?}", users[i]);
 
-        }
-    }
-    
+type Label = (Wrapper<String>, Wrapper<String>);
+
+macro_rules! var_make {
+    ($field: expr, $value:expr) => {
+        let mut expr = $value;
+    };
 }
 
-// serde_json::to_string().unwrap();
-// serde_json::from_str().unwrap();
-/*
-std::fs::write(
-    "path",
-    serde_json::to_string_pretty(&record).unwrap(),
-).unwrap();
-*/
-/*
-let mut record = {
-let record = std::fs::read_to_string("path")?;
-serde_json::from_str::<User>(&record).unwrap()
-}
-*/
-fn main() -> Result<(), std::io::Error> {
-
-    let mut dir: UserDirectory = UserDirectory::new();
+fn main() -> Result<()> {
+    let mut dir: Directory = Directory::new();
     
-    dir.record("Rose Bafaiz", String::from("1920 Mantova Street"), 21);
-    dir.record("Dario Mazhara", String::from("1920 Mantova Street"), 20);
+  //  let mut obj: Record = dir.new_records(3);
 
-    dir.address_search("1920 Mantova Street");
+    let data = r#"{
+       "key_vals": {
+           "name": "dario mazhara",
+           "address": "10 arabian court",
+           "age": "20"
+            }
+       }"#;
 
+    let mut expected = Record::default();
+    expected.key_vals.push((Wrapper("name".into()), Wrapper("dario mazhara".into())));
+    expected.key_vals.push((Wrapper("address".into()), Wrapper("10 arabian court".into())));
+    expected.key_vals.push((Wrapper("age".into()), Wrapper("20".into())));
+
+    let res: Record = serde_json::from_str(&data).unwrap();
+    for((exp_k, exp_v), (res_k, res_v)) in expected.key_vals.iter().zip(&res.key_vals) {
+        assert_eq!(exp_k.0, res_k.0);
+        assert_eq!(exp_v.0, res_v.0);
+    }
+    assert_eq!(data, serde_json::to_string_pretty(&expected).unwrap());
+
+    println!("{:?}", res.key_vals);
+  //  let mut string_obj = obj.to_string();
+  //  println!("{:?}", string_obj);
+
+    
     Ok(())
 }
