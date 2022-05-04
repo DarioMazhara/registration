@@ -8,242 +8,28 @@ use serde_json::Result;
 use serde_json::json;
 use std::collections::HashMap;
 use std::io::Read;
+mod record;
+mod directory;
+use crate::record::Record;
+use crate::directory::Directory;
+extern crate glob;
+use glob::glob;
 
-
-
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct Root {
-    pub user_id: i64,
-    pub id: i64,
-    pub title: String,
-    pub completed: bool,
-}
-
-#[derive(Serialize, Deserialize)]
-struct Directory {
-    records: Vec<Record>,
-}
-
-impl Directory {
-    fn new() -> Self {
-        std::fs::create_dir("directory");
-        Self {
-            records: Vec::new(),
+fn trim_newline(s: &mut String) {
+    if s.ends_with('\n') {
+        s.pop();
+        if s.ends_with('\r') {
+            s.pop();
         }
-    }
-    fn new_json_obj(&mut self, key_vals: Vec<(String, String)>) -> Value {
-        let mut map = Map::new();
-        for (key, val) in key_vals.into_iter() {
-         //   println!("{}: {}", key, val);
-            map.insert(key, Value::String(val));
-        }
-
-        let obj = Value::Object(map);
-        std::fs::write(
-            "directory/record.json",
-            serde_json::to_string_pretty(&obj).unwrap(),
-        ).unwrap();
-        return obj;
-    }
-    fn get_record(&mut self, id: u32) -> Option<&mut Record> {
-        println!("Get record");
-        for i in 0..self.records.len() {
-            println!("{}", &self.records[i].name[7..]);
-            if &self.records[i].name[7..] == id.to_string() {
-                return Some(&mut self.records[i]);
-            }
-        }
-        return None;
-    }
-    fn delete_record_index(mut self, index: usize) -> Self {
-
-        self.records.remove(index);
-        self
-    }
-
-    fn new_record(&mut self, num_fields: u32)  {
-       // let mut key_vals: Vec<(String, String)> = Vec::new();
-        let mut key_vals: Vec<(String, String)> = Vec::new();
-        let mut field: String = String::new();
-        let mut value: String = String::new();
-        let mut expected = Record::default();
-       // expected.name = String::from("record");
-        let mut i = 0;
-        while (i < num_fields) {
-
-            let mut field = String::new();
-
-            print!("Enter field: ");
-            let _ = stdout().flush();
-
-            stdin().read_line(&mut field).expect("ERR");
-
-            if let Some('\n')=field.chars().next_back(){field.pop();}
-            if let Some('\r')=field.chars().next_back() {field.pop();}
-
-            let mut value = String::new();
-            
-            print!("Enter the associated value: ");
-        
-            let _ = stdout().flush();
-            
-            stdin().read_line(&mut value).expect("ERR");
-            
-          //  key_vals.push((field.clone(), value.clone()));
-          //  assert_eq!((field, value), *key_vals.back().unwrap());
-            expected.key_vals.push((field, value));
-            field = String::new();
-            value = String::new();
-            i+=1;
-        }
-      //  println!("{:?}", key_vals);
-        
-   //     let mut obj = self.new_json_obj(key_vals);
-   //     let mut string_obj = obj.to_string();
-
-   //     let res: Record = serde_json::from_str(&string_obj).unwrap();)
-        
-        println!("{:#?}", expected);
-        std::fs::write(
-            expected.name.clone() + ".json",
-            serde_json::to_string_pretty(&expected).unwrap(),
-        ).unwrap();
-        self.records.push(expected);
-    }
-}   
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-#[serde(transparent)]
-struct Wrapper<T>(T);
-
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
-pub struct Record{
-    name: String,
-    #[serde(with = "serde_with::rust::tuple_list_as_map")]
-    key_vals: Vec<(String, String)>,
-}
-
-static mut RECORDS: u32 = 0;
-impl Record {
-    fn default() -> Self {
-        unsafe {
-            let mut this = Self {
-                name: String::from("record_".to_owned() + &(RECORDS).to_string()),
-                key_vals: Vec::new(),
-            };
-            RECORDS += 1;
-            this
-        }
-    }
-    fn record(name: String) -> Self {
-        unsafe {
-            RECORDS += 1;
-            Self {
-                name,
-                key_vals: Vec::new(),
-            }
-        }
-    }
-
-    fn update(&mut self) {
-       std::fs::write(
-           self.name.clone() + ".json",
-           serde_json::to_string_pretty(&self).unwrap(),
-       ).unwrap();
-    }
-
-    fn set_field_name(&mut self, current: String, new: String) {
-        for i in self.key_vals.iter_mut() {
-            if (i.0 == current) {
-                i.0 = new;
-                break;
-            }
-        }
-        self.update();
-
-    }
-
-    fn set_value(&mut self, field: String, new_val: String) {
-        for i in self.key_vals.iter_mut() {
-            if i.0 == field {
-                i.1 = new_val;
-                break;
-            }
-        }
-        self.update();
     }
 }
 
 fn main() -> Result<()> {
-    let mut dir: Directory = Directory::new();
+    let mut dirs: Vec<Directory>  = Directory::load().unwrap();
 
-    //dir.records.push(dir.new_record(3));
-    let data = r#"{
-        "name": "record_0",
-        "key_vals" : {
-            "name": "ethan",
-            "age": "21",
-            "sex": "male"
-        }
-    }"#;
+    dirs[0].delete_dir();
 
-    let data_record: Record = serde_json::from_str(data).unwrap();
-
-    dir.records.push(data_record);
-    let mut record = &mut dir.get_record(0).unwrap();
-    println!("{:#?}", record);
-    record.set_field_name(String::from("age"), String::from("how old"));
-    record.set_value(String::from("sex"), String::from("female"));
-    println!("{:#?}", record);
-
-    dir = dir.delete_record_index(0);
-
-    println!("{:#?}", dir.get_record(0).unwrap());
-    
-  //  let path = "record_0.json";
-  //  let data = fs::read_to_string(path).expect("ERROR!");
-
-
- //   let mut record: Record = serde_json::from_str::<Record>(&data).expect("ERROR");
-   // let mut res: Value = serde_json::from_str(&data).expect("ERROR!");
-  
-
-
-    
-
-   // res.set_value(String::from("bank"), String::from("$2,000,000"));
-  //  res.set_field_name(String::from("name"), String::from("tag"));
- //   println!("{}", data);
-   // println!("{:#?}", res);
-   /*   
-    let transaction = r#"{
-        "name": "transactions",
-        "key_vals": {
-            "from": "ethan gary",
-            "to": "krishan lall",
-            "amount": "$450,920.00",
-            "status":"posted"
-        }
-    }"#;
-    let mut required = Record::default(String::from("transactions"));
-    required.name = String::from("transactions");
-    required.key_vals.push((String::from("from"),String::from("nicholas gary")));
-    required.key_vals.push((String::from("to"), String::from("krishan lall")));
-    required.key_vals.push((String::from("amount"), String::from("$450,920.00")));
-    required.key_vals.push((String::from("status"), String::from("posted")));
-    std::fs::write(
-        "transaction.json",
-        serde_json::to_string_pretty(&required).unwrap(),
-    ).unwrap();
-
-    required.key_vals[0].0 = String::from("penis");
-    println!("{:?}", required.key_vals);
-
-    
-
-
-
+/* 
     let data = r#"{
         "name": "users",
        "key_vals": {

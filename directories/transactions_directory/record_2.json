@@ -1,0 +1,9 @@
+{
+  "name": "record_2",
+  "id": 2,
+  "type": "transactions",
+  "key_vals": {
+    "type": "refund",
+    "amount": "$6,750.45"
+  }
+}
