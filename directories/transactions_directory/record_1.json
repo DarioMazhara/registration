@@ -1,9 +1,0 @@
-{
-  "name": "record_1",
-  "id": 1,
-  "type": "transactions",
-  "key_vals": {
-    "type": "purchase",
-    "amount": "$23,500.00"
-  }
-}

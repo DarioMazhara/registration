@@ -1,4 +1,5 @@
 use crate::Record;
+use crate::utils::display;
 use core::num;
 use std::{io::{stdin, stdout, Write}, path::{self, Path}};
 use json::object::Object;
@@ -10,10 +11,13 @@ use std::fs::read_link;
 
 #[derive(Serialize)]
 pub struct Directory {
-    pub name: String,
-    pub records: Vec<Record>,
-    pub num_records: u32,
+    pub name:String,
+    pub default_fields: Option<Vec<String>>,
+    records: Vec<Record>,
+    num_records: u32,
 }
+
+
 
 impl Directory {
     pub fn new(name: String) -> Self {
@@ -22,6 +26,7 @@ impl Directory {
         std::fs::create_dir("directories/".to_owned() + &name.clone() + "_directory");
         let x = Self {
             name: name.clone(),
+            default_fields: None,
             num_records: 0,
             records: Vec::new(),
         };
@@ -31,6 +36,24 @@ impl Directory {
         );
         return x;
     }
+    pub fn add_field(&mut self, mut field: String, is_password: Option<bool>) {
+        if let None = self.default_fields {
+            self.default_fields = Some(Vec::new());
+        }
+        self.default_fields.as_mut().unwrap().push(field);
+    }
+    pub fn check_fields(&mut self, key_vals: Vec<(String, String)>) -> bool {
+        for (key, val) in key_vals {
+            if let None = self.default_fields {
+                return false;
+            }
+            if !self.default_fields.as_mut().unwrap().contains(&key) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     pub fn load_print() {
         println!("Loading following paths and their records:");
         for e in glob("../registration/directories/*").expect("err") {
@@ -70,7 +93,7 @@ impl Directory {
             let mut a = dirs[i][28..].to_string();
             a = a.replace("_directory", "");
             dir_structs.push(
-                Directory { name:  a.to_string(), num_records: 0, records: Vec::new() }
+                Directory { name:  a.to_string(), default_fields: None, num_records: 0, records: Vec::new() }
             )
         }
         for mut dir in &mut dir_structs {
@@ -109,6 +132,8 @@ impl Directory {
 
         std::fs::remove_file("directories/".to_owned() + &self.name.clone() + "_directory/" + &self.records[index].name.clone() + &".json".to_owned());
         self.records.remove(index);
+        self.num_records -= 1;
+        self.update();
     }
     pub fn delete_all(&mut self) {
         for mut record in &mut self.records {
@@ -122,6 +147,10 @@ impl Directory {
         std::fs::remove_dir_all("../registration/directories/".to_owned() + &self.name.clone() + "_directory/").expect("failed to delete");
     }
     pub fn manual_record(&mut self, key_vals: Vec<(String, String)>)  {
+        if !self.check_fields(key_vals.clone()) {
+            println!("Input does not match any field");
+            return;
+        }
         self.num_records += 1;
         let mut expected: Record = Record::default(self.name.clone(), self.num_records);
         for val in key_vals {
@@ -137,9 +166,10 @@ impl Directory {
             &self.num_records.to_string(),
         );
     }
-    pub fn new_record(&mut self, num_fields: u32)  {
+    pub fn new_record(&mut self, num_fields: u32, is_custom: Option<bool>)  {
+       
        // let mut key_vals: Vec<(String, String)> = Vec::new();
-        let mut key_vals: Vec<(String, String)> = Vec::new();
+
         let mut field: String = String::new();
         let mut value: String = String::new();
         let mut expected = Record::default(self.name.clone(), self.num_records);
@@ -150,6 +180,9 @@ impl Directory {
             let mut field = String::new();
 
             print!("Enter field: ");
+            if !self.check_fields(vec![(field.clone(), String::new())]) {
+                return;
+            }
             let _ = stdout().flush();
 
             stdin().read_line(&mut field).expect("ERR");
@@ -178,13 +211,22 @@ impl Directory {
    //     let mut string_obj = obj.to_string();
 
    //     let res: Record = serde_json::from_str(&string_obj).unwrap();)
-        
+        if is_custom.unwrap() == false && !self.check_fields(expected.key_vals.clone())  {
+            return;
+        }
+
         println!("{:#?}", expected);
         std::fs::write(
             "directories/".to_owned() + &self.name.clone() + "_directory/" + &expected.name.clone() + ".json",
             serde_json::to_string_pretty(&expected).unwrap(),
-        ).unwrap();
+        );
         self.records.push(expected);
+    }
+    pub fn records(&mut self) -> &mut Vec<Record> {
+        &mut self.records
+    }
+    pub fn quantity(&mut self) -> u32 {
+        self.num_records
     }
 
     pub fn set_all_field(&mut self, current: String, new: String) {
