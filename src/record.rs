@@ -1,4 +1,5 @@
 use serde_derive::{Serialize, Deserialize};
+use crate::utils::display;
 #[allow(dead_code)]
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct Record {
@@ -6,6 +7,7 @@ pub struct Record {
     id: u32,
     #[serde(rename = "type")]
     pub typename: String,
+    pub is_mutable: bool,
     #[serde(with = "serde_with::rust::tuple_list_as_map")]
     pub key_vals: Vec<(String, String)>,
 }
@@ -21,7 +23,7 @@ impl Record {
             }
         }
     }
-    pub fn id(self) -> u32 {
+    pub fn id(&self) -> u32 {
         return self.id;
     }
     pub fn record(name: String, typename: String, id: u32) -> Self {
