@@ -7,6 +7,7 @@ use serde_json::{Map, Value};
 use glob::glob;
 use serde_derive::{Serialize, Deserialize};
 use std::fs::read_link; 
+use pwhash::bcrypt;
 #[allow(dead_code)]
 
 #[derive(Serialize)]
@@ -97,7 +98,7 @@ impl Directory {
             )
         }
         for mut dir in &mut dir_structs {
-  //          let num_data = std::fs::read_to_string("../registration/directories/".to_owned() + &dir.name.clone() + "_directory/info.json");
+  //          let num_data = std::fs::read_to_string("../registration/directories/".to_owned() + &dir.name().clone() + "_directory/info.json");
 
 //            dir.update();
             for file in std::fs::read_dir("../registration/directories/".to_owned() + &dir.name.clone() + "_directory/").unwrap() {
@@ -121,8 +122,8 @@ impl Directory {
     pub fn get_record(&mut self, id: u32) -> Option<&mut Record> {
         println!("Get record");
         for i in 0..self.records.len() {
-            println!("{}", &self.records[i].name[7..]);
-            if &self.records[i].name[7..] == id.to_string() {
+            println!("{}", &self.records[i].name()[7..]);
+            if &self.records[i].name()[7..] == id.to_string() {
                 return Some(&mut self.records[i]);
             }
         }
@@ -130,14 +131,14 @@ impl Directory {
     }
     pub fn delete_record_index(&mut self, index: usize) {
 
-        std::fs::remove_file("directories/".to_owned() + &self.name.clone() + "_directory/" + &self.records[index].name.clone() + &".json".to_owned());
+        std::fs::remove_file("directories/".to_owned() + &self.name.clone() + "_directory/" + &self.records[index].name() + &".json".to_owned());
         self.records.remove(index);
         self.num_records -= 1;
         self.update();
     }
     pub fn delete_all(&mut self) {
         for mut record in &mut self.records {
-            std::fs::remove_file("directories/".to_owned() + &self.name.clone() + "_directory/" + &record.name.clone() + ".json");
+            std::fs::remove_file("directories/".to_owned() + &self.name.clone() + "_directory/" + &record.name().clone() + ".json");
 
         }
         self.records = Vec::new();
@@ -151,10 +152,17 @@ impl Directory {
             println!("Input does not match any field");
             return;
         }
+       
         self.num_records += 1;
-        let mut expected: Record = Record::default(self.name.clone(), self.num_records);
+        let mut expected: Record = Record::default(self.name.clone(), self.num_records, false);
         for val in key_vals {
-            expected.key_vals.push((val.0, val.1));
+            if val.0.to_lowercase() == "password".to_string() {
+                let h = bcrypt::hash(val.1).unwrap();
+                expected.key_vals().push(("password hash".to_string(), h));
+            }
+            else {
+                expected.key_vals().push((val.0, val.1));
+            }
         }
         expected.update();
         self.update();
@@ -172,8 +180,8 @@ impl Directory {
 
         let mut field: String = String::new();
         let mut value: String = String::new();
-        let mut expected = Record::default(self.name.clone(), self.num_records);
-       // expected.name = String::from("record");
+        let mut expected = Record::default(self.name.clone(), self.num_records, false);
+       // expected.name() = String::from("record");
         let mut i = 0;
         while (i < num_fields) {
 
@@ -200,7 +208,7 @@ impl Directory {
             
           //  key_vals.push((field.clone(), value.clone()));
           //  assert_eq!((field, value), *key_vals.back().unwrap());
-            expected.key_vals.push((field, value));
+            expected.key_vals().push((field, value));
             field = String::new();
             value = String::new();
             i+=1;
@@ -211,13 +219,13 @@ impl Directory {
    //     let mut string_obj = obj.to_string();
 
    //     let res: Record = serde_json::from_str(&string_obj).unwrap();)
-        if is_custom.unwrap() == false && !self.check_fields(expected.key_vals.clone())  {
+        if is_custom.unwrap() == false && !self.check_fields(expected.key_vals().clone())  {
             return;
         }
 
         println!("{:#?}", expected);
         std::fs::write(
-            "directories/".to_owned() + &self.name.clone() + "_directory/" + &expected.name.clone() + ".json",
+            "directories/".to_owned() + &self.name.clone() + "_directory/" + &expected.name() + ".json",
             serde_json::to_string_pretty(&expected).unwrap(),
         );
         self.records.push(expected);

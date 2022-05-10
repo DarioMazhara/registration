@@ -28,35 +28,15 @@ fn trim_newline(s: &mut String) {
 
 fn main() -> Result<()> {
 
-    let mut dirs: Option<Vec<Directory>> = Directory::load();
-    dirs.as_mut().unwrap()[0].display();
+    let mut dirs: Vec<Directory> = Directory::load().unwrap();
 
-    dirs.as_mut().unwrap()[0].add_field("name".to_string(), None);
-    dirs.as_mut().unwrap()[0].manual_record(vec![("name".to_string(), "again".to_string())]);
-    dirs.as_mut().unwrap()[0].display();
-   /* 
-   // dirs[0].display();
-    let mut dirs: Vec<Directory> = Vec::new();
-    dirs.push(Directory::new("account".to_string()));
-    dirs[0].manual_record(vec![("name".to_string(), "sabrina".to_string())]);
+    dirs[0].add_field("name".to_string(), None);
+    dirs[0].add_field("address".to_string(), None);
+    dirs[0].add_field("password".to_string(), Some(true));
 
-  //  dirs[0].display();
-
-
-     dirs[0].manual_record(vec![("name".to_string(), "krishan".to_string())]);
-//     dirs[0].manual_record(vec![("name".to_string(), "krishan".to_string())]);
-    dirs[0].manual_record(vec![("name".to_string(), "ethan".to_string())]);
-    dirs[0].manual_record(vec![("name".to_string(), "rose".to_string())]);
-    dirs[0].manual_record(vec![("name".to_string(), "adam".to_string())]);
-    dirs[0].manual_record(vec![("name".to_string(), "marat".to_string())]);
-
-    
-
-    dirs[0].get_record(1).unwrap().set_value("name".to_string(), "dario".to_string());
-    dirs[0].delete_record_index(1);
+    dirs[0].get_record(1).unwrap().set_mutable(true);
+    dirs[0].get_record(1).unwrap().set_value("id".to_string(), "10".to_string());
     dirs[0].display();
-*/
-    
 /*                                                                                                                                                                                                        
     let data = r#"{
         "name": "users",

@@ -9,12 +9,13 @@ impl display for Record {
         println!("=============================");
         println!("            RECORD           ");
         println!("IMMUTABLE FIELDS");
-        println!("Name: {}", self.name.clone());
+        println!("Name: {}", self.name());
         println!("ID: {}", self.id());
-        println!("Type: {}", self.typename);
+        println!("Is mutable: {}", self.is_mutable());
+        println!("Type: {}", self.typename());
 
         println!("FIELDS");
-        for (key, val) in &self.key_vals {
+        for (key, val) in self.key_vals() {
             println!("{}: {}", key, val);
         }
 
