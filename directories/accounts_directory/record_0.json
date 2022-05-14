@@ -1,0 +1,11 @@
+{
+  "name": "record_0",
+  "id": 0,
+  "type": "accounts",
+  "is_mutable": false,
+  "key_vals": {
+    "name": "dario",
+    "address": " 10 arabian court",
+    "age": " 21"
+  }
+}

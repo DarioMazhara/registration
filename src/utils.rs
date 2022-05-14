@@ -34,7 +34,7 @@ impl display for Directory {
         for record in self.records() {
             record.display();
         }
-        println!();
+      //  println!("=============================");
         println!("}}");
 
     }

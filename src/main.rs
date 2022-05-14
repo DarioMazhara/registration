@@ -11,9 +11,11 @@ use std::io::Read;
 mod record;
 mod directory;
 mod utils;
+mod io;
 use crate::utils::display;
 use crate::record::Record;
 use crate::directory::Directory;
+use crate::io::*;
 extern crate glob;
 use glob::glob;
 
@@ -25,19 +27,41 @@ fn trim_newline(s: &mut String) {
         }
     }
 }
+fn s(text: &str) -> String {
+    return text.to_string();
+}
+static mut dirs: Vec<Directory> = Vec::new();
+fn main() {
+    unsafe 
+    {//  let mut dirs: Vec<Directory> = Directory::load().unwrap();
+        dirs.push(Directory::new("accounts".to_string()));
+        dirs[0].add_field(s("name"), Some(false));
+        dirs[0].add_field(s("address"), Some(false));
+        dirs[0].add_field(s("age"), Some(false));
 
-fn main() -> Result<()> {
+        dirs[0].manual_record(s("dario, 10 arabian court, 21"));
+        ///////////////////////////////////////////////////////
 
-    let mut dirs: Vec<Directory> = Directory::load().unwrap();
+        dirs.push(Directory::new("employees".to_string()));
+        dirs[1].add_field(s("name"), Some(false));
+        dirs[1].add_field(s("position"), Some(false));
 
-    dirs[0].add_field("name".to_string(), None);
-    dirs[0].add_field("address".to_string(), None);
-    dirs[0].add_field("password".to_string(), Some(true));
+        dirs[1].manual_record(s("ethan gary, manager"));
+//      ////////////////////////////////////////////////////
 
-    dirs[0].get_record(1).unwrap().set_mutable(true);
-    dirs[0].get_record(1).unwrap().set_value("id".to_string(), "10".to_string());
-    dirs[0].display();
-/*                                                                                                                                                                                                        
+        dirs.push(Directory::new("transactions".to_string()));
+        dirs[2].add_field(s("type"), Some(false));
+        dirs[2].add_field(s("amount"), Some(false));
+
+        dirs[2].manual_record(s("transfer, $10000"));
+        ////////////////////////////////////////////////////
+
+       // dirs[0].new_record(3, Some(false));
+      //  dirs[0].manual_record("bob, wlr, 50".to_string());
+
+        main_menu();
+
+    }  /*                                                                                                                                                                                                        
     let data = r#"{
         "name": "users",
        "key_vals": {
@@ -47,5 +71,4 @@ fn main() -> Result<()> {
             }
        }"#;
        */
-    Ok(())
 }
