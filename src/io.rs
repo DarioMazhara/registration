@@ -120,28 +120,6 @@ pub fn create_dir() {
    println!("Created new directory: {}", dir_name.clone());
 }
 
-fn add_fields(dir_name: String) {
-    let mut fields = String::new();
-    println!("Enter the fields of the records delimited by a comma, or press enter to not require default fields");
-    stdin().read_line(&mut fields).expect("Error");
-    let default_fields = fields.split(",");
-    let mut index: usize = 0;
-     unsafe {
-         for i in 0..dirs.len()-1 {
-             println!("1: {}, 2: {}", dirs[i].name.trim().clone(), dir_name.clone());
-             if dirs[i].name.trim() == dir_name {
- 
-                 println!("Found");
-                 index = i;
-                 break;
-             }
-         }
-         for mut field in default_fields {
-             println!("Adding field: {:#?}", field.clone());
-             dirs[index].add_field(field.to_string(), None);
-         }
-     }
-}
 
 pub fn new_record() {
     let mut dir_name = String::new();
