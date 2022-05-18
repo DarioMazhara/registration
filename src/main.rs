@@ -36,11 +36,9 @@ fn main() {
     {
         dirs = Directory::load().unwrap();
         
-        ////////////////////////////////////////////////////
-
-       // dirs[0].new_record(3, Some(false));
-      //  dirs[0].manual_record("bob, wlr, 50".to_string());
-
+        let mut ok = String::new();
+        println!("THIS IS A BRANCH TEST\nPRESS ANY KEY TO CONTINUE...");
+        stdin().read_line(&mut ok).expect("err");
         main_menu();
 
     }  /*                                                                                                                                                                                                        
