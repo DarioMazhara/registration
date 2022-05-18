@@ -41,10 +41,20 @@ impl Directory {
         }
         return true;
     }
+    pub fn default_fields(&mut self) -> Vec<String> {
+        let mut to_return: Vec<String> = Vec::new();
+        if None == self.default_fields {
+            return vec![];
+        }
+        for field in self.default_fields.as_ref().unwrap() {
+            to_return.push(field.clone());
+        }
+        return to_return;
+    }
     pub fn delete_all(&mut self) {
         for mut record in &mut self.records {
             fs::remove_file("directories/".to_owned() + &self.name.clone() + "_directory/" + &record.name().clone() + ".json");
-
+            self.num_records -= 1;
         }
         self.records = Vec::new();
     }
@@ -60,7 +70,7 @@ impl Directory {
         }
         fs::remove_file("directories/".to_owned() + &self.name.clone() + "_directory/" + &self.records[index].name() + &".json".to_owned());
         self.records.remove(index);
-        if self.num_records > 0 
+        if self.num_records >= 0 
         {
             self.num_records -= 1;
         }
@@ -72,6 +82,7 @@ impl Directory {
         println!("                       DIRECTORY                          ");
         println!("Name: {}", self.name.clone());
         println!("Records quantity: {}", self.quantity());
+        println!("Default fields: {:#?}", self.default_fields());
     }
 
     pub fn get_record(&mut self, id: u32) -> Option<&mut Record> {
@@ -119,6 +130,7 @@ impl Directory {
 
             println!("../registration/directories/{}/_{}", dir.name.clone(), "_directory/");
             for file in fs::read_dir("../registration/directories/".to_owned() + &dir.name.clone() + "_directory/").unwrap() {
+                
                 let a = file.unwrap().path();
                 let data = fs::read_to_string(a.clone()).expect("err");
                 println!("{:#?}\n{}\n--------------------\n", a.clone(), data);
@@ -192,6 +204,7 @@ impl Directory {
                 expected.key_vals().push((val.0, val.1));
             }
         }
+        self.num_records += 1;
         expected.update();
         self.update();
         self.records.push(expected);
@@ -261,7 +274,7 @@ impl Directory {
             }
         }*/
        
-
+        self.num_records += 1;
         println!("{:#?}", expected);
         expected.update();
         self.update();
@@ -283,7 +296,6 @@ impl Directory {
        let mut path: String = String::new();
         if let path = r#"directories/"#.to_owned() + &self.name.clone() + "_directory/info" {
         }
-        self.num_records += 1;
         write(
             r#"directories/"#.to_owned() + &self.name + "_directory/info",
             self.num_records.to_string(),

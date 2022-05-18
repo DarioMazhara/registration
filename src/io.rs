@@ -2,6 +2,7 @@ use std::{io::{stdout, stdin, Write}};
 use crate::{Directory, Record};
 use crate::dirs;
 use crate::utils::display;
+use std::str::Split;
 
 pub fn main_menu() {
     loop 
@@ -11,7 +12,7 @@ pub fn main_menu() {
     println!("                    SELECT OPTION        ");
     println!();
     println!("[1] VIEW DIRECTORIES [2] NEW DIRECTORY [3] NEW RECORD\n
-[4] DELETE DIRECTORY [5] DELETE RECORD [6] EXIT");
+[4] DELETE DIRECTORY [5] DELETE RECORD [6] DELETE ALL DIRECTORIES [7] EXIT");
     println!();
     println!("===================================================");
     if !take_input("$>".to_string()) {
@@ -35,8 +36,19 @@ pub fn take_input(msg: String) -> bool {
         "3" => {new_record(); true},
         "4" => {del_dir(); true},
         "5" => {del_rec(); true},
-        "6" => {println!("Exiting.. Goodbye"); false},
+        "6" => {del_all(); true},
+        "7" => {println!("Exiting.. Goodbye"); false},
         _ => {println!("Unknown command, please select from the given options"); true}
+    }
+}
+
+pub fn del_all() {
+
+    unsafe {    
+        for dir in &mut dirs {
+            dir.delete_dir();
+        }
+    dirs = Vec::new();
     }
 }
 
@@ -50,7 +62,7 @@ pub fn del_rec() {
     unsafe {
         for mut dir in &mut dirs {
             println!("{}, {}", dir.name, dir_name.trim().clone());
-        if dir.name == dir_name.trim() {
+        if dir.name == dir_name {
             println!("Directory found");
             println!("Enter ID of directory to delete");
             stdin().read_line(&mut rec_name).expect("Error, invalid entry");
@@ -74,7 +86,7 @@ pub fn del_dir() {
     stdin().read_line(&mut dir_name).expect("Error, invalid entry");
     unsafe {
         for mut dir in &mut dirs {
-            if dir.name == dir_name.trim() {
+            if dir.name == dir_name {
                 println!("Deleting directory: {}", dir.name.clone());
                 dir.delete_dir();
             }
@@ -92,10 +104,43 @@ pub fn create_dir() {
     let mut dir_name = String::new();
     println!("Enter new directory name: ");
     stdin().read_line(&mut dir_name).expect("Error, invalid entry");
+
+    let mut dir = Directory::new(dir_name.clone());
+
+    let mut fields = String::new();
+    println!("Enter the fields of the records delimited by a comma, or press enter to not require default fields");
+    stdin().read_line(&mut fields).expect("Error");
+    let default_fields = fields.split(",");
+    for mut field in default_fields {
+        dir.add_field(field.to_string(), None);
+    }
     unsafe
-   { dirs.push(Directory::new(dir_name.clone()));}
+   { dirs.push(dir);}
 
    println!("Created new directory: {}", dir_name.clone());
+}
+
+fn add_fields(dir_name: String) {
+    let mut fields = String::new();
+    println!("Enter the fields of the records delimited by a comma, or press enter to not require default fields");
+    stdin().read_line(&mut fields).expect("Error");
+    let default_fields = fields.split(",");
+    let mut index: usize = 0;
+     unsafe {
+         for i in 0..dirs.len()-1 {
+             println!("1: {}, 2: {}", dirs[i].name.trim().clone(), dir_name.clone());
+             if dirs[i].name.trim() == dir_name {
+ 
+                 println!("Found");
+                 index = i;
+                 break;
+             }
+         }
+         for mut field in default_fields {
+             println!("Adding field: {:#?}", field.clone());
+             dirs[index].add_field(field.to_string(), None);
+         }
+     }
 }
 
 pub fn new_record() {
@@ -107,7 +152,7 @@ pub fn new_record() {
     unsafe {
         for mut dir in &mut dirs {
             println!("{}, {}", dir.name, dir_name.trim().clone());
-        if dir.name == dir_name.trim() {
+        if dir.name == dir_name {
             println!("Directory found");
             &mut dir.new_record(3, None);
             //&mut dir.new_record(dir.default_fields.as_ref().unwrap().len().try_into().unwrap(), None);

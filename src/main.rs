@@ -33,27 +33,9 @@ fn s(text: &str) -> String {
 static mut dirs: Vec<Directory> = Vec::new();
 fn main() {
     unsafe 
-    {//  let mut dirs: Vec<Directory> = Directory::load().unwrap();
-        dirs.push(Directory::new("accounts".to_string()));
-        dirs[0].add_field(s("name"), Some(false));
-        dirs[0].add_field(s("address"), Some(false));
-        dirs[0].add_field(s("age"), Some(false));
-
-        dirs[0].manual_record(s("dario, 10 arabian court, 21"));
-        ///////////////////////////////////////////////////////
-
-        dirs.push(Directory::new("employees".to_string()));
-        dirs[1].add_field(s("name"), Some(false));
-        dirs[1].add_field(s("position"), Some(false));
-
-        dirs[1].manual_record(s("ethan gary, manager"));
-//      ////////////////////////////////////////////////////
-
-        dirs.push(Directory::new("transactions".to_string()));
-        dirs[2].add_field(s("type"), Some(false));
-        dirs[2].add_field(s("amount"), Some(false));
-
-        dirs[2].manual_record(s("transfer, $10000"));
+    {
+        dirs = Directory::load().unwrap();
+        
         ////////////////////////////////////////////////////
 
        // dirs[0].new_record(3, Some(false));

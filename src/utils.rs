@@ -29,7 +29,8 @@ impl display for Directory {
         println!("                       DIRECTORY                          ");
         println!("Name: {}", self.name.clone());
         println!("Records quantity: {}", self.quantity());
-
+        println!("Hello");
+        println!("Default fields: {:#?}", self.default_fields());
         println!("Records: {{");
         for record in self.records() {
             record.display();
