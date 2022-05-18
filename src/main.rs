@@ -36,19 +36,8 @@ fn main() {
     {
         dirs = Directory::load().unwrap();
         
-        let mut ok = String::new();
-        println!("THIS IS A BRANCH TEST\nPRESS ANY KEY TO CONTINUE...");
-        stdin().read_line(&mut ok).expect("err");
+   
         main_menu();
 
-    }  /*                                                                                                                                                                                                        
-    let data = r#"{
-        "name": "users",
-       "key_vals": {
-           "name": "dario mazhara",
-           "address": "10 arabian court",
-           "age": "20"
-            }
-       }"#;
-       */
+    } 
 }
