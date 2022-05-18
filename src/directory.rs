@@ -162,7 +162,6 @@ impl Directory {
                             let file_string: String = file.unwrap().path().into_os_string().into_string().unwrap();
                             println!("\t[FILE] {}", file_string[27..].to_string());
                             println!();
-                            //println!("\t{}", file.unwrap().path().display());
                         }
                     }
                 },
@@ -254,8 +253,6 @@ impl Directory {
             
             stdin().read_line(&mut value).expect("ERR");
             
-          //  key_vals.push((field.clone(), value.clone()));
-          //  assert_eq!((field, value), *key_vals.back().unwrap());
 
             expected.key_vals().push((field, value));
             field = String::new();
