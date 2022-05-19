@@ -50,6 +50,7 @@ pub fn del_all() {
         }
     dirs = Vec::new();
     }
+    press_any_key();
 }
 
 pub fn del_rec() {
@@ -77,6 +78,7 @@ pub fn del_rec() {
             }
         }
     }}
+    press_any_key();
 }
 
 
@@ -92,6 +94,7 @@ pub fn del_dir() {
             }
         }
     }
+    press_any_key();
 }
 pub fn list_dirs() {
     unsafe {
@@ -99,13 +102,14 @@ pub fn list_dirs() {
             dir.display_info();
         }
     }
+    press_any_key();
 }
 pub fn create_dir() {
     let mut dir_name = String::new();
     println!("Enter new directory name: ");
     stdin().read_line(&mut dir_name).expect("Error, invalid entry");
 
-    let mut dir = Directory::new(dir_name.clone());
+    let mut dir = Directory::new(dir_name.clone().trim().to_string());
 
     let mut fields = String::new();
     println!("Enter the fields of the records delimited by a comma, or press enter to not require default fields");
@@ -118,6 +122,7 @@ pub fn create_dir() {
    { dirs.push(dir);}
 
    println!("Created new directory: {}", dir_name.clone());
+   press_any_key();
 }
 
 
@@ -130,10 +135,16 @@ pub fn new_record() {
     unsafe {
         for mut dir in &mut dirs {
             println!("{}, {}", dir.name, dir_name.trim().clone());
-        if dir.name == dir_name {
-            println!("Directory found");
-            &mut dir.new_record(3, None);
+            if dir.name == dir_name.trim() {
+                println!("Directory found");
+                &mut dir.new_record();
             //&mut dir.new_record(dir.default_fields.as_ref().unwrap().len().try_into().unwrap(), None);
         }
     }}
+    press_any_key();
+}
+
+pub fn press_any_key() {
+    println!("Press any key to continue...");
+    stdin().read_line(&mut String::new());
 }

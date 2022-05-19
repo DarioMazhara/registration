@@ -61,7 +61,7 @@ impl Directory {
 
     pub fn delete_dir(&mut self) {
         println!("{}","directories/".to_owned() + &self.name.clone() + "_directory/");
-        fs::remove_dir_all("../registration_2/directories/".to_owned() + &self.name.clone() + "_directory/").expect("failed to delete");
+        fs::remove_dir_all("../registration/directories/".to_owned() + &self.name.clone() + "_directory/").expect("failed to delete");
     }
 
     pub fn delete_record_index(&mut self, index: usize) {
@@ -109,7 +109,7 @@ impl Directory {
          
         Directory::load_print();
         let mut dirs: Vec<String> = Vec::new();
-        for e in glob("../registration_2/directories/*").expect("err") {
+        for e in glob("../registration/directories/*").expect("err") {
             match e {
                 Ok(path) => {
                     (&mut dirs).push(path.into_os_string().into_string().unwrap());
@@ -128,8 +128,9 @@ impl Directory {
         }
         for mut dir in &mut dir_structs {
 
-            println!("../registration_2/directories/{}/_{}", dir.name.clone(), "_directory/");
-            for file in fs::read_dir("../registration_2/directories/".to_owned() + &dir.name.clone() + "_directory/").unwrap() {
+            println!("../registration/directories/{}/_{}", dir.name.clone(), "_directory/");
+            fs::remove_file("../registration/directories/.DS_Store");
+            for file in fs::read_dir("../registration/directories/".to_owned() + &dir.name.clone() + "_directory/").expect("err") {
                 
                 let a = file.unwrap().path();
                 let data = fs::read_to_string(a.clone()).expect("err");
@@ -149,7 +150,7 @@ impl Directory {
     }
     pub fn load_print() {
         println!("Loading following paths and their records:");
-        for e in glob("../registration_2/directories/*").expect("err") {
+        for e in glob("../registration/directories/*").expect("err") {
             match e {
                 Ok(path) => {
                     let path_string = path.into_os_string().into_string().unwrap();
@@ -224,7 +225,59 @@ impl Directory {
         );
         return x;
     }
-    pub fn new_record(&mut self, num_fields: u32, is_custom: Option<bool>)  {
+    pub fn new_record(&mut self) {
+        let mut expected = Record::default(self.name.clone(), self.num_records, false);
+
+        let mut input = String::new();
+
+        if None == self.default_fields.as_ref() {
+            println!("This record does not have any default fields.
+            You must enter them manually.");
+            let mut input = String::new();
+            println!("Enter number of custom fields: ");
+            stdin().read_line(&mut input);
+            self.new_record_custom(input.trim().parse::<u32>().unwrap());
+            return;
+        }
+       
+        println!("Is this a record with custom fields? (y/n)");
+
+        stdin().read_line(&mut input);
+
+        if input.trim().to_lowercase() == "y".to_string() {
+            let mut input = String::new();
+            println!("Enter number of custom fields: ");
+            stdin().read_line(&mut input);
+            self.new_record_custom(input.trim().parse::<u32>().unwrap());
+            return;
+        }
+
+        for i in 0..self.default_fields.as_ref().unwrap().len() {
+            let mut value: String = String::new();
+            println!("Enter value for field: {}", self.default_fields.as_ref().unwrap()[i].trim());
+
+            //let _ = stdout().flush();
+            stdin().read_line(&mut value);
+
+            if let Some('\n') = value.chars().next_back(){value.pop();}
+            if let Some('\r') = value.chars().next_back(){value.pop();}
+
+            expected.key_vals().push((self.default_fields.as_ref().unwrap()[i].clone(), value));
+        }
+        use std::fs::File;
+        self.num_records += 1;
+        expected.update();
+        let test = expected.name() + ".json";
+        println!("{}", test);
+        
+        let mut f = File::open("../registration/directories/".to_owned() + &self.name + "_directory/" + &expected.name() + ".json");
+        let metadata = f.as_ref().unwrap().metadata();
+        assert_eq!(true, metadata.unwrap().permissions().readonly());
+        self.update();
+        self.records.push(expected);
+
+    }
+    pub fn new_record_custom(&mut self, num_fields: u32)  {
        
        // let mut key_vals: Vec<(String, String)> = Vec::new();
         let field: String = String::new();
